@@ -1,5 +1,7 @@
 import { useParams, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import fundo from "../assets/fundo.jpg";
+import logo from "../assets/Logo1.png";
 
 export function PostoAdmin() {
   const { id } = useParams();
@@ -8,69 +10,214 @@ export function PostoAdmin() {
   const [dados, setDados] = useState(null);
 
   useEffect(() => {
-    function carregarDados() {
-      const dadosSalvos = JSON.parse(localStorage.getItem(`posto_${id}`));
-      setDados(dadosSalvos);
-    }
+    const carregarDados = () => {
+      try {
+        const dadosSalvos = JSON.parse(localStorage.getItem(`posto_${id}`));
+        setDados(dadosSalvos);
+      } catch (error) {
+        console.error("Erro:", error);
+        setDados(null);
+      }
+    };
 
-    carregarDados(); // primeira carga
-
-    const intervalo = setInterval(carregarDados, 1500); // atualiza rápido
-
+    carregarDados();
+    const intervalo = setInterval(carregarDados, 1500);
     return () => clearInterval(intervalo);
   }, [id]);
 
-  if (tipo !== "admin") {
-    return <Navigate to="/postos" />;
-  }
+  if (tipo !== "admin") return <Navigate to="/postos" />;
 
   if (!dados) {
-    return <p className="p-4">Nenhum dado ainda</p>;
+    return (
+      <BackgroundLayout>
+        <EmptyState />
+      </BackgroundLayout>
+    );
   }
 
-  const r = dados.relatorio || {};
+  const {
+    checkinRegistros = [],
+    checkoutRegistros = [],
+    checkoutFinalizado = false,
+    relatorio = {}
+  } = dados;
+
+  const {
+    manhaPrevencoes = "",
+    manhaAtaques = "",
+    tardePrevencoes = "",
+    tardeAtaques = ""
+  } = relatorio;
 
   return (
-    <div className="p-4 space-y-4">
+    <BackgroundLayout>
+      <div className="w-full max-w-lg bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl space-y-5">
 
-      <h1 className="text-xl font-bold">Admin - Posto {id}</h1>
+        <Header titulo={`Posto ${id}`} />
 
-      {/* STATUS */}
-      <div className={`p-2 rounded text-white text-center ${
-        dados.checkoutFinalizado ? "bg-green-500" : "bg-yellow-500"
-      }`}>
-        {dados.checkoutFinalizado ? "Finalizado" : "Em andamento"}
+        <StatusCard finalizado={checkoutFinalizado} />
+
+        <Card titulo="📸 Check-in">
+          <ImageSection imagens={checkinRegistros} />
+        </Card>
+
+        <Card titulo="📝 Relatório Operacional">
+          <RelatorioSection
+            manhaPrevencoes={manhaPrevencoes}
+            manhaAtaques={manhaAtaques}
+            tardePrevencoes={tardePrevencoes}
+            tardeAtaques={tardeAtaques}
+          />
+        </Card>
+
+        <Card titulo="🚪 Checkout">
+          <ImageSection imagens={checkoutRegistros} />
+        </Card>
+
       </div>
+    </BackgroundLayout>
+  );
+}
 
-      {/* CHECK-IN */}
-      <div>
-        <p className="font-semibold">Check-in</p>
+/* 🌫️ FUNDO */
+function BackgroundLayout({ children }) {
+  return (
+    <div className="relative h-screen w-screen overflow-hidden">
+      <img src={fundo} className="absolute w-full h-full object-cover" />
+      <div className="absolute w-full h-full backdrop-blur-sm bg-black/30"></div>
+
+      <div className="relative z-10 flex items-center justify-center h-full px-4">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* 🔝 HEADER */
+function Header({ titulo }) {
+  return (
+    <div className="flex flex-col items-center border-b pb-3">
+      <img src={logo} className="w-16 mb-2" />
+      <h1 className="text-xl font-bold">{titulo}</h1>
+      <p className="text-xs text-gray-500">Relatório administrativo</p>
+    </div>
+  );
+}
+
+/* 📦 CARD */
+function Card({ titulo, children }) {
+  return (
+    <div className="bg-white rounded-xl p-3 shadow-sm space-y-2">
+      <p className="font-semibold">{titulo}</p>
+      {children}
+    </div>
+  );
+}
+
+/* 🚦 STATUS */
+function StatusCard({ finalizado }) {
+  return (
+    <div className={`p-3 rounded-xl text-center font-semibold text-white ${
+      finalizado ? "bg-green-500" : "bg-yellow-500"
+    }`}>
+      {finalizado ? "Finalizado ✅" : "Em andamento ⏳"}
+    </div>
+  );
+}
+
+/* 🖼️ IMAGENS */
+function ImageSection({ imagens }) {
+  const [imagemSelecionada, setImagemSelecionada] = useState(null);
+
+  return (
+    <div>
+      {imagens.length === 0 ? (
+        <p className="text-sm text-gray-500">Nenhuma imagem</p>
+      ) : (
         <div className="flex gap-2 flex-wrap">
-          {dados.checkinFotos?.map((f, i) => (
-            <img key={i} src={f} className="w-20 h-20 rounded object-cover" />
+          {imagens.map((img, i) => (
+            <div key={i} className="text-center">
+              <img
+                src={img.foto}
+                onClick={() => setImagemSelecionada(img.foto)}
+                className="w-20 h-20 rounded-lg shadow cursor-pointer hover:scale-105 transition"
+              />
+              <p className="text-[10px] text-gray-500">{img.dataHora}</p>
+            </div>
           ))}
         </div>
-      </div>
+      )}
 
-      {/* RELATÓRIO */}
-      <div>
-        <p className="font-semibold">Relatório</p>
-        <p>🌅 Manhã - Prev: {r.manhaPrevencoes || 0}</p>
-        <p>🌅 Manhã - Ataques: {r.manhaAtaques || 0}</p>
-        <p>🌇 Tarde - Prev: {r.tardePrevencoes || 0}</p>
-        <p>🌇 Tarde - Ataques: {r.tardeAtaques || 0}</p>
-      </div>
-
-      {/* CHECKOUT */}
-      <div>
-        <p className="font-semibold">Checkout</p>
-        <div className="flex gap-2 flex-wrap">
-          {dados.checkoutFotos?.map((f, i) => (
-            <img key={i} src={f} className="w-20 h-20 rounded object-cover" />
-          ))}
+      {imagemSelecionada && (
+        <div
+          onClick={() => setImagemSelecionada(null)}
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+        >
+          <img src={imagemSelecionada} className="max-w-[90%] max-h-[90%] rounded-xl" />
         </div>
-      </div>
+      )}
+    </div>
+  );
+}
 
+/* 📝 RELATÓRIO PROFISSIONAL */
+function RelatorioSection({
+  manhaPrevencoes,
+  manhaAtaques,
+  tardePrevencoes,
+  tardeAtaques
+}) {
+  return (
+    <div className="space-y-3">
+
+      <table className="w-full text-sm border rounded-lg overflow-hidden">
+        <thead>
+          <tr className="bg-gray-100 text-gray-700">
+            <th className="p-2 text-left">Período</th>
+            <th className="p-2 text-center">Prevenções</th>
+            <th className="p-2 text-center">Ataques</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr className="border-t">
+            <td className="p-2">Manhã</td>
+            <td className="text-center">{manhaPrevencoes}</td>
+            <td className="text-center">{manhaAtaques}</td>
+          </tr>
+
+          <tr className="border-t">
+            <td className="p-2">Tarde</td>
+            <td className="text-center">{tardePrevencoes}</td>
+            <td className="text-center">{tardeAtaques}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <Resumo
+        totalPrev={Number(manhaPrevencoes) + Number(tardePrevencoes)}
+        totalAtaques={Number(manhaAtaques) + Number(tardeAtaques)}
+      />
+
+    </div>
+  );
+}
+
+/* 📊 RESUMO */
+function Resumo({ totalPrev, totalAtaques }) {
+  return (
+    <div className="bg-gray-100 rounded-lg p-2 text-sm">
+      <p><strong>Total Prevenções:</strong> {totalPrev}</p>
+      <p><strong>Total Ataques:</strong> {totalAtaques}</p>
+    </div>
+  );
+}
+
+/* ❌ EMPTY */
+function EmptyState() {
+  return (
+    <div className="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl text-center">
+      <p className="text-gray-600">Nenhum dado ainda</p>
     </div>
   );
 }
