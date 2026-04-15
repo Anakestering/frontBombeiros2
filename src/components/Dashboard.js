@@ -171,6 +171,19 @@ export function PostoUsuario() {
   alert("Relatório salvo!");
 }
 
+function getHoje() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function salvar(dadosAtualizados) {
+  const dadosComData = {
+    ...dadosAtualizados,
+    ultimaAtualizacao: getHoje()
+  };
+
+  localStorage.setItem(`posto_${id}`, JSON.stringify(dadosComData));
+}
+
   // ================= UI =================
 
   return (

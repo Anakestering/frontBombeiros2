@@ -37,6 +37,10 @@ export function AdminRegistros() {
       localStorage.setItem(`posto_${i}`, JSON.stringify(dados));
     }
 
+    const confirmar = window.confirm("Tem certeza que deseja apagar fotos?");
+  if (!confirmar) return;
+
+
     alert("Fotos apagadas!");
     window.location.reload();
   }

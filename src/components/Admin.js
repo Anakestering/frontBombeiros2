@@ -9,10 +9,24 @@ export function PostoAdmin() {
 
   const [dados, setDados] = useState(null);
 
+  function getHoje() {
+    return new Date().toISOString().split("T")[0];
+  }
+
   useEffect(() => {
     const carregarDados = () => {
       try {
         const dadosSalvos = JSON.parse(localStorage.getItem(`posto_${id}`));
+
+        // 🔥 IGNORA DADOS DE OUTRO DIA (NÃO APAGA, SÓ NÃO USA)
+        if (
+          !dadosSalvos ||
+          dadosSalvos.ultimaAtualizacao !== getHoje()
+        ) {
+          setDados(null);
+          return;
+        }
+
         setDados(dadosSalvos);
       } catch (error) {
         console.error("Erro:", error);
@@ -57,11 +71,11 @@ export function PostoAdmin() {
 
         <StatusCard finalizado={checkoutFinalizado} />
 
-        <Card titulo="📸 Check-in">
+        <Card titulo="Check-in">
           <ImageSection imagens={checkinRegistros} />
         </Card>
 
-        <Card titulo="📝 Relatório Operacional">
+        <Card titulo="Relatório Operacional">
           <RelatorioSection
             manhaPrevencoes={manhaPrevencoes}
             manhaAtaques={manhaAtaques}
@@ -70,7 +84,7 @@ export function PostoAdmin() {
           />
         </Card>
 
-        <Card titulo="🚪 Checkout">
+        <Card titulo="Checkout">
           <ImageSection imagens={checkoutRegistros} />
         </Card>
 
@@ -99,7 +113,7 @@ function Header({ titulo }) {
     <div className="flex flex-col items-center border-b pb-3">
       <img src={logo} className="w-16 mb-2" />
       <h1 className="text-xl font-bold">{titulo}</h1>
-      <p className="text-xs text-gray-500">Relatório administrativo</p>
+      <p className="text-xs text-gray-500">Informações do posto</p>
     </div>
   );
 }
@@ -117,9 +131,11 @@ function Card({ titulo, children }) {
 /* 🚦 STATUS */
 function StatusCard({ finalizado }) {
   return (
-    <div className={`p-3 rounded-xl text-center font-semibold text-white ${
-      finalizado ? "bg-green-500" : "bg-yellow-500"
-    }`}>
+    <div
+      className={`p-3 rounded-xl text-center font-semibold text-white ${
+        finalizado ? "bg-green-500" : "bg-yellow-500"
+      }`}
+    >
       {finalizado ? "Finalizado ✅" : "Em andamento ⏳"}
     </div>
   );
@@ -153,14 +169,17 @@ function ImageSection({ imagens }) {
           onClick={() => setImagemSelecionada(null)}
           className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
         >
-          <img src={imagemSelecionada} className="max-w-[90%] max-h-[90%] rounded-xl" />
+          <img
+            src={imagemSelecionada}
+            className="max-w-[90%] max-h-[90%] rounded-xl"
+          />
         </div>
       )}
     </div>
   );
 }
 
-/* 📝 RELATÓRIO PROFISSIONAL */
+/* 📝 RELATÓRIO */
 function RelatorioSection({
   manhaPrevencoes,
   manhaAtaques,
@@ -169,13 +188,12 @@ function RelatorioSection({
 }) {
   return (
     <div className="space-y-3">
-
       <table className="w-full text-sm border rounded-lg overflow-hidden">
         <thead>
           <tr className="bg-gray-100 text-gray-700">
             <th className="p-2 text-left">Período</th>
             <th className="p-2 text-center">Prevenções</th>
-            <th className="p-2 text-center">Ataques</th>
+            <th className="p-2 text-center">Lesões por água-vivas</th>
           </tr>
         </thead>
 
@@ -198,7 +216,6 @@ function RelatorioSection({
         totalPrev={Number(manhaPrevencoes) + Number(tardePrevencoes)}
         totalAtaques={Number(manhaAtaques) + Number(tardeAtaques)}
       />
-
     </div>
   );
 }
@@ -208,7 +225,7 @@ function Resumo({ totalPrev, totalAtaques }) {
   return (
     <div className="bg-gray-100 rounded-lg p-2 text-sm">
       <p><strong>Total Prevenções:</strong> {totalPrev}</p>
-      <p><strong>Total Ataques:</strong> {totalAtaques}</p>
+      <p><strong>Total lesões por água-vivas:</strong> {totalAtaques}</p>
     </div>
   );
 }

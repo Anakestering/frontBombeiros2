@@ -89,7 +89,7 @@ export function AdminRelatorios() {
             }
         }
 
-        // 🔥 RECARREGA NA TELA (isso resolve seu bug)
+      
         carregarRelatorios();
 
         alert("Relatórios apagados!");

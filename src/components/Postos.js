@@ -18,8 +18,29 @@ export function Postos() {
         []
     );
 
+    function getHoje() {
+        return new Date().toISOString().split("T")[0];
+    }
+
     function acessarPosto(id) {
         navigate(tipo === "admin" ? `/admin/posto/${id}` : `/posto/${id}`);
+    }
+
+    function getStatus(dados) {
+        if (!dados) return "vermelho";
+
+        const hoje = getHoje();
+
+        // 🔥 reset visual diário (sem apagar dados)
+        if (dados.ultimaAtualizacao !== hoje) {
+            return "vermelho";
+        }
+
+        if (dados.checkoutFinalizado) return "verde";
+
+        if ((dados.checkinRegistros || []).length > 0) return "amarelo";
+
+        return "vermelho";
     }
 
     useEffect(() => {
@@ -49,7 +70,6 @@ export function Postos() {
             <Background />
 
             <div className="relative z-10 flex flex-col h-full">
-
                 <Header tipo={tipo} navigate={navigate} />
 
                 <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-3">
@@ -67,52 +87,34 @@ export function Postos() {
     );
 }
 
-/* 🔥 LÓGICA */
-function getStatus(dados) {
-    if (!dados) return "vermelho";
-
-    if (dados.checkoutFinalizado) return "verde";
-
-    if ((dados.checkinRegistros || []).length > 0) return "amarelo";
-
-    return "vermelho";
-}
-
 /* 🌫️ FUNDO */
 function Background() {
     return (
         <>
-            <img
-                src={fundo}
-                alt="Fundo"
-                className="absolute w-full h-full object-cover"
-            />
+            <img src={fundo} className="absolute w-full h-full object-cover" />
             <div className="absolute w-full h-full backdrop-blur-sm bg-black/30"></div>
         </>
     );
 }
 
-/* 🔝 HEADER ALINHADO COM OS CARDS */
+/* 🔝 HEADER */
 function Header({ tipo, navigate }) {
     return (
         <div className="w-full max-w-sm mx-auto flex items-center justify-between p-4">
+            <img src={logo} className="w-14 h-14 drop-shadow" />
 
-            {/* Logo */}
-            <img src={logo} alt="Logo" className="w-14 h-14 drop-shadow" />
-
-            {/* Botões admin */}
             {tipo === "admin" && (
                 <div className="flex gap-2">
                     <button
                         onClick={() => navigate("/admin/registros")}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm transition"
+                        className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm"
                     >
                         Registros
                     </button>
 
                     <button
                         onClick={() => navigate("/admin/relatorios")}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm transition"
+                        className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm"
                     >
                         Relatórios
                     </button>
@@ -124,26 +126,6 @@ function Header({ tipo, navigate }) {
 
 /* 📦 CARD */
 function PostoCard({ posto, status = "vermelho", onClick }) {
-    const config = getStatusConfig(status);
-
-    return (
-        <div
-            onClick={() => onClick(posto.id)}
-            className={`p-3 rounded-xl shadow cursor-pointer active:scale-95 transition 
-            flex items-center justify-between max-w-sm mx-auto ${config.bg}`}
-        >
-            <div>
-                <h2 className="text-lg font-medium">{posto.nome}</h2>
-                <p className="text-sm">{config.label}</p>
-            </div>
-
-            <div className="text-xl">{config.icon}</div>
-        </div>
-    );
-}
-
-/* 🎨 STATUS */
-function getStatusConfig(status) {
     const map = {
         verde: {
             bg: "bg-green-500 text-white",
@@ -162,5 +144,19 @@ function getStatusConfig(status) {
         }
     };
 
-    return map[status] || map.vermelho;
+    const config = map[status] || map.vermelho;
+
+    return (
+        <div
+            onClick={() => onClick(posto.id)}
+            className={`p-3 rounded-xl shadow cursor-pointer active:scale-95 transition flex items-center justify-between max-w-sm mx-auto ${config.bg}`}
+        >
+            <div>
+                <h2 className="text-lg font-medium">{posto.nome}</h2>
+                <p className="text-sm">{config.label}</p>
+            </div>
+
+            <div className="text-xl">{config.icon}</div>
+        </div>
+    );
 }
