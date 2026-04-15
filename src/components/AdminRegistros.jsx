@@ -42,7 +42,7 @@ export function AdminRegistros() {
   }
 
   return (
-  <div className="relative h-screen w-screen overflow-hidden">
+  <div className="relative min-h-screen w-screen overflow-y-auto">
 
     {/* 🌫️ FUNDO */}
     <img src={fundo} className="absolute w-full h-full object-cover" />
