@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import logo from "../assets/Logo1.png";
 import fundo from "../assets/fundo.jpg";
 
@@ -7,63 +7,18 @@ export function Postos() {
     const navigate = useNavigate();
     const tipo = localStorage.getItem("tipo");
 
-    const [statusPostos, setStatusPostos] = useState({});
-
-    const postos = useMemo(
-        () =>
-            Array.from({ length: 21 }, (_, i) => ({
-                id: i + 1,
-                nome: `Posto ${i + 1}`
-            })),
-        []
-    );
-
-    function getHoje() {
-        return new Date().toISOString().split("T")[0];
-    }
+    const [postos, setPostos] = useState([]);
 
     function acessarPosto(id) {
         navigate(tipo === "admin" ? `/admin/posto/${id}` : `/posto/${id}`);
     }
 
-    function getStatus(dados) {
-        if (!dados) return "vermelho";
-
-        const hoje = getHoje();
-
-        // 🔥 reset visual diário (sem apagar dados)
-        if (dados.ultimaAtualizacao !== hoje) {
-            return "vermelho";
-        }
-
-        if (dados.checkoutFinalizado) return "verde";
-
-        if ((dados.checkinRegistros || []).length > 0) return "amarelo";
-
-        return "vermelho";
-    }
-
     useEffect(() => {
-        const carregarStatus = () => {
-            try {
-                const novosStatus = {};
-
-                postos.forEach(({ id }) => {
-                    const dados = JSON.parse(localStorage.getItem(`posto_${id}`));
-                    novosStatus[id] = getStatus(dados);
-                });
-
-                setStatusPostos(novosStatus);
-            } catch (error) {
-                console.error("Erro ao carregar status:", error);
-            }
-        };
-
-        carregarStatus();
-
-        const intervalo = setInterval(carregarStatus, 1500);
-        return () => clearInterval(intervalo);
-    }, [postos]);
+        fetch("http://localhost:8080/postos/ordenado")
+            .then((res) => res.json())
+            .then((data) => setPostos(data))
+            .catch((error) => console.error("Erro ao buscar postos:", error));
+    }, []);
 
     return (
         <div className="relative h-screen w-screen overflow-hidden">
@@ -77,7 +32,6 @@ export function Postos() {
                         <PostoCard
                             key={posto.id}
                             posto={posto}
-                            status={statusPostos[posto.id]}
                             onClick={acessarPosto}
                         />
                     ))}
@@ -125,38 +79,17 @@ function Header({ tipo, navigate }) {
 }
 
 /* 📦 CARD */
-function PostoCard({ posto, status = "vermelho", onClick }) {
-    const map = {
-        verde: {
-            bg: "bg-green-500 text-white",
-            label: "Finalizado",
-            icon: "✅"
-        },
-        amarelo: {
-            bg: "bg-yellow-400 text-black",
-            label: "Em andamento",
-            icon: "⏳"
-        },
-        vermelho: {
-            bg: "bg-white/90 text-gray-800",
-            label: "Não iniciado",
-            icon: "⚠️"
-        }
-    };
-
-    const config = map[status] || map.vermelho;
-
+function PostoCard({ posto, onClick }) {
     return (
         <div
             onClick={() => onClick(posto.id)}
-            className={`p-3 rounded-xl shadow cursor-pointer active:scale-95 transition flex items-center justify-between max-w-sm mx-auto ${config.bg}`}
+            className="p-3 rounded-xl shadow cursor-pointer active:scale-95 transition flex items-center justify-between max-w-sm mx-auto bg-white/90 text-gray-800"
         >
             <div>
                 <h2 className="text-lg font-medium">{posto.nome}</h2>
-                <p className="text-sm">{config.label}</p>
             </div>
 
-            <div className="text-xl">{config.icon}</div>
+            <div className="text-xl">➡️</div>
         </div>
     );
 }

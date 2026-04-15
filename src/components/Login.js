@@ -38,7 +38,7 @@ export function Login() {
     }
 
     localStorage.setItem("tipo", user.tipo);
-    navigate("/postos");
+    navigate("/postos/ordenado");
   }
 
   return (
