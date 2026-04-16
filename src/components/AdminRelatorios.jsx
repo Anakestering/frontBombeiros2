@@ -5,101 +5,86 @@ import logo from "../assets/Logo1.png";
 export function AdminRelatorios() {
     const [relatorios, setRelatorios] = useState([]);
 
-    function carregarRelatorios() {
-        const lista = [];
+    const [inicio, setInicio] = useState("");
+    const [fim, setFim] = useState("");
 
-        for (let i = 1; i <= 21; i++) {
-            const dados = JSON.parse(localStorage.getItem(`posto_${i}`));
+    async function carregarRelatorios() {
+        try {
+            const response = await fetch("http://localhost:8080/relatorios");
 
-            if (!dados?.relatorio) continue;
+            if (!response.ok) throw new Error();
 
-            const r = dados.relatorio;
+            const dados = await response.json();
+            setRelatorios(dados);
 
-            // só entra se tiver algo preenchido
-            if (
-                r.manhaPrevencoes ||
-                r.manhaAtaques ||
-                r.tardePrevencoes ||
-                r.tardeAtaques
-            ) {
-                lista.push({
-                    posto: i,
-                    ...r
-                });
-            }
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao carregar relatórios do servidor");
         }
-
-        setRelatorios(lista);
     }
 
     useEffect(() => {
         carregarRelatorios();
     }, []);
 
+    // 🔥 EXPORT POR PERÍODO
     function exportarExcel() {
-        let conteudo = `
-        <table>
-            <tr>
-                <th>Posto</th>
-                <th>Manhã Prev</th>
-                <th>Manhã Ataques</th>
-                <th>Tarde Prev</th>
-                <th>Tarde Ataques</th>
-            </tr>
-        `;
-
-        relatorios.forEach(r => {
-            conteudo += `
-                <tr>
-                    <td>${r.posto}</td>
-                    <td>${r.manhaPrevencoes}</td>
-                    <td>${r.manhaAtaques}</td>
-                    <td>${r.tardePrevencoes}</td>
-                    <td>${r.tardeAtaques}</td>
-                </tr>
-            `;
-        });
-
-        conteudo += `</table>`;
-
-        const blob = new Blob([conteudo], { type: "application/vnd.ms-excel" });
-        const url = URL.createObjectURL(blob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "relatorios.xls";
-        a.click();
-    }
-
-    function limparRelatorios() {
-        if (!window.confirm("Tem certeza que deseja apagar todos os relatórios?")) return;
-
-        for (let i = 1; i <= 21; i++) {
-            const dados = JSON.parse(localStorage.getItem(`posto_${i}`));
-
-            if (dados) {
-                dados.relatorio = {
-                    manhaPrevencoes: "",
-                    manhaAtaques: "",
-                    tardePrevencoes: "",
-                    tardeAtaques: ""
-                };
-
-                localStorage.setItem(`posto_${i}`, JSON.stringify(dados));
-            }
+        if (!inicio || !fim) {
+            alert("Selecione o período primeiro!");
+            return;
         }
 
-      
-        carregarRelatorios();
-
-        alert("Relatórios apagados!");
+        const url = `http://localhost:8080/relatorios/export?inicio=${inicio}T00:00:00&fim=${fim}T23:59:59`;
+        window.open(url);
     }
+
+    // 🔥 OCULTAR RELATÓRIO (soft delete visual)
+    async function ocultarRelatorio(id) {
+        try {
+            const response = await fetch(
+                `http://localhost:8080/relatorios/ocultar/${id}`,
+                { method: "PATCH" }
+            );
+
+            if (!response.ok) {
+                const text = await response.text();
+                console.error("Erro backend:", text);
+                return;
+            }
+
+            // remove da tela sem reload
+            setRelatorios(prev => prev.filter(r => r.id !== id));
+
+        } catch (err) {
+            console.error("Erro fetch:", err);
+        }
+    }
+
+    async function ocultarTodos() {
+    try {
+        const response = await fetch(
+            "http://localhost:8080/relatorios/ocultar-todos",
+            { method: "PATCH" }
+        );
+
+        if (!response.ok) {
+            const text = await response.text();
+            console.error("Erro backend:", text);
+            return;
+        }
+
+        setRelatorios([]); // limpa tela imediatamente
+
+    } catch (err) {
+        console.error("Erro fetch:", err);
+    }
+}
 
     return (
         <div className="relative min-h-screen w-screen overflow-y-auto">
 
             {/* FUNDO */}
-            <img src={fundo} className="absolute w-full h-full object-cover" />
+            <img src={fundo} className="absolute w-full h-full object-cover" alt="" />
             <div className="absolute w-full h-full backdrop-blur-sm bg-black/30"></div>
 
             <div className="relative z-10 flex items-center justify-center h-full px-4">
@@ -108,11 +93,28 @@ export function AdminRelatorios() {
 
                     {/* HEADER */}
                     <div className="flex flex-col items-center border-b pb-3">
-                        <img src={logo} className="w-16 mb-2" />
+                        <img src={logo} className="w-16 mb-2" alt="" />
                         <h1 className="text-xl font-bold">Relatórios</h1>
                         <p className="text-xs text-gray-500">
                             Relatórios operacionais registrados
                         </p>
+                    </div>
+
+                    {/* SELEÇÃO DE PERÍODO */}
+                    <div className="flex gap-2 mb-3">
+                        <input
+                            type="date"
+                            value={inicio}
+                            onChange={(e) => setInicio(e.target.value)}
+                            className="border p-2 rounded w-full"
+                        />
+
+                        <input
+                            type="date"
+                            value={fim}
+                            onChange={(e) => setFim(e.target.value)}
+                            className="border p-2 rounded w-full"
+                        />
                     </div>
 
                     {/* BOTÕES */}
@@ -125,10 +127,10 @@ export function AdminRelatorios() {
                         </button>
 
                         <button
-                            onClick={limparRelatorios}
-                            className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-lg w-full"
+                            onClick={ocultarTodos}
+                            className="bg-red-700 hover:bg-red-800 text-white p-3 rounded-lg w-full"
                         >
-                            Apagar
+                            Ocultar todos
                         </button>
                     </div>
 
@@ -139,14 +141,24 @@ export function AdminRelatorios() {
                                 Nenhum relatório encontrado
                             </p>
                         ) : (
-                            relatorios.map((r, i) => (
-                                <div key={i} className="bg-white rounded-xl p-3 shadow-sm">
+                            relatorios.map((r) => (
+                                <div key={r.id} className="bg-white rounded-xl p-3 shadow-sm">
 
-                                    <p className="font-semibold text-sm mb-2">
-                                        Posto {r.posto}
-                                    </p>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <p className="font-semibold text-sm">
+                                            {r.nomePosto || `Posto ${r.postoId}`}
+                                        </p>
 
-                                    {/* TABELA ESTILO PROFISSIONAL */}
+                                        {/* BOTÃO OCULTAR */}
+                                        <button
+                                            onClick={() => ocultarRelatorio(r.id)}
+                                            className="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 rounded"
+                                        >
+                                            Ocultar
+                                        </button>
+                                    </div>
+
+                                    {/* TABELA */}
                                     <table className="w-full text-sm border rounded-lg overflow-hidden">
                                         <thead>
                                             <tr className="bg-gray-100 text-gray-700">
