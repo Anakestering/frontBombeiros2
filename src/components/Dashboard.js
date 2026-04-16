@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import fundo from "../assets/fundo.jpg";
 import logo from "../assets/Logo1.png";
 
@@ -24,15 +24,42 @@ export function PostoUsuario() {
   const [checkoutFinalizado, setCheckoutFinalizado] = useState(false);
   const [imagemAberta, setImagemAberta] = useState(null);
 
-  // 🔥 CONTROLE DO RELATÓRIO
   const [relatorioEnviado, setRelatorioEnviado] = useState(false);
 
-  // ================= CHECK-IN =================
+  // ================= 🔥 CARREGAR DO BACKEND =================
+  async function carregarRegistros() {
+    try {
+      const response = await fetch("http://localhost:8080/registros");
+      const data = await response.json();
 
-  function capturarFotoCheckin(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+      const checkins = data
+        .filter(r => r.postoId == id && r.tipo === "CHECKIN")
+        .map(r => ({
+          foto: r.urlImagem,
+          dataHora: new Date(r.dataHora).toLocaleString()
+        }));
 
+      const checkouts = data
+        .filter(r => r.postoId == id && r.tipo === "CHECKOUT")
+        .map(r => ({
+          foto: r.urlImagem,
+          dataHora: new Date(r.dataHora).toLocaleString()
+        }));
+
+      setCheckinRegistros(checkins);
+      setCheckoutRegistros(checkouts);
+
+    } catch (err) {
+      console.error("Erro ao carregar registros", err);
+    }
+  }
+
+  useEffect(() => {
+    carregarRegistros();
+  }, [id]);
+
+  // ================= 📸 FUNÇÃO GENÉRICA =================
+  function processarImagem(file, callback) {
     const img = new Image();
     const reader = new FileReader();
 
@@ -54,17 +81,26 @@ export function PostoUsuario() {
 
       const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
 
-      setFotoTempCheckin(compressedBase64);
-
-      if (inputCheckinRef.current) inputCheckinRef.current.value = "";
+      callback(compressedBase64);
     };
 
     reader.readAsDataURL(file);
   }
 
+  // ================= CHECK-IN =================
+
+  function capturarFotoCheckin(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    processarImagem(file, (img) => {
+      setFotoTempCheckin(img);
+      if (inputCheckinRef.current) inputCheckinRef.current.value = "";
+    });
+  }
+
   function removerFotoTempCheckin() {
     setFotoTempCheckin(null);
-    if (inputCheckinRef.current) inputCheckinRef.current.value = "";
   }
 
   async function finalizarCheckin() {
@@ -84,20 +120,9 @@ export function PostoUsuario() {
         })
       });
 
-      const text = await response.text();
+      if (!response.ok) throw new Error(await response.text());
 
-      if (!response.ok) throw new Error(text);
-
-      const novo = JSON.parse(text);
-
-      setCheckinRegistros((prev) => [
-        ...prev,
-        {
-          foto: novo.urlImagem,
-          dataHora: new Date(novo.dataHora).toLocaleString()
-        }
-      ]);
-
+      await carregarRegistros();
       setFotoTempCheckin(null);
 
       alert("Check-in enviado!");
@@ -122,19 +147,17 @@ export function PostoUsuario() {
       return alert("Envie o relatório primeiro!");
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFotoTempCheckout(reader.result);
+    processarImagem(file, (img) => {
+      setFotoTempCheckout(img);
       if (inputCheckoutRef.current) inputCheckoutRef.current.value = "";
-    };
-    reader.readAsDataURL(file);
+    });
   }
 
   function removerFotoTempCheckout() {
     setFotoTempCheckout(null);
-    if (inputCheckoutRef.current) inputCheckoutRef.current.value = "";
   }
 
+  // 🔥 SALVAR (só local)
   function salvarFotoCheckout() {
     if (!fotoTempCheckout) return alert("Tire uma foto!");
     if (checkoutRegistros.length >= 3) return alert("Máximo 3 fotos!");
@@ -148,12 +171,38 @@ export function PostoUsuario() {
     setFotoTempCheckout(null);
   }
 
-  function finalizarCheckout() {
+  // 🔥 FINALIZAR (envia pro backend)
+  async function finalizarCheckout() {
     if (!relatorioEnviado) return alert("Envie o relatório!");
     if (checkoutRegistros.length === 0) return alert("Adicione uma foto!");
 
-    setCheckoutFinalizado(true);
-    alert("Checkout finalizado!");
+    try {
+      for (const foto of checkoutRegistros) {
+        const response = await fetch("http://localhost:8080/registros", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            postoId: Number(id),
+            tipo: "CHECKOUT",
+            urlImagem: foto.foto
+          })
+        });
+
+        if (!response.ok) throw new Error(await response.text());
+      }
+
+      await carregarRegistros();
+      setCheckoutRegistros([]);
+      setCheckoutFinalizado(true);
+
+      alert("Checkout finalizado!");
+
+    } catch (err) {
+      console.error(err);
+      alert("Erro no checkout");
+    }
   }
 
   // ================= UI =================
@@ -226,7 +275,7 @@ export function PostoUsuario() {
               foto={fotoTempCheckout}
               onClick={() => setImagemAberta(fotoTempCheckout)}
               onRemover={removerFotoTempCheckout}
-              onSalvar={salvarFotoCheckout}
+              onSalvar={salvarFotoCheckout} // ✅ corrigido
               salvarLabel="Salvar"
             />
 
@@ -246,7 +295,10 @@ export function PostoUsuario() {
       </div>
 
       {imagemAberta && (
-        <div onClick={() => setImagemAberta(null)} className="fixed inset-0 bg-black/80 flex items-center justify-center">
+        <div
+          onClick={() => setImagemAberta(null)}
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-[9999]"
+        >
           <img src={imagemAberta} className="max-w-[90%] max-h-[90%] rounded-xl" alt="" />
         </div>
       )}
