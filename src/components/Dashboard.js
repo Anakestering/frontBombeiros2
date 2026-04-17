@@ -14,6 +14,7 @@ export function PostoUsuario() {
 
   const inputCheckinRef = useRef(null);
   const inputCheckoutRef = useRef(null);
+  const [loading, setLoading] = useState(false);
 
   const [checkinRegistros, setCheckinRegistros] = useState([]);
   const [fotoTempCheckin, setFotoTempCheckin] = useState(null);
@@ -29,36 +30,39 @@ export function PostoUsuario() {
   // ================= 🔥 CARREGAR DO BACKEND =================
   async function carregarRegistros() {
     try {
-      const response = await fetch("http://localhost:8080/registros");
+      const response = await fetch(`http://localhost:8080/registros/hoje/${id}`);
+      if (!response.ok) throw new Error("Erro ao buscar registros");
       const data = await response.json();
 
+
+
       const checkins = data
-        .filter(r => r.postoId == id && r.tipo === "CHECKIN")
+        .filter(r => r.tipo === "CHECKIN")
         .map(r => ({
           foto: r.urlImagem,
           dataHora: new Date(r.dataHora).toLocaleString()
         }));
 
       const checkouts = data
-        .filter(r => r.postoId == id && r.tipo === "CHECKOUT")
+        .filter(r => r.tipo === "CHECKOUT")
         .map(r => ({
           foto: r.urlImagem,
           dataHora: new Date(r.dataHora).toLocaleString()
         }));
+
+
 
       setCheckinRegistros(checkins);
       setCheckoutRegistros(checkouts);
 
       // ================= 🔥 NOVO: VERIFICAR RELATÓRIO =================
       try {
-        const responseRelatorio = await fetch(`http://localhost:8080/relatorios/posto/${id}`)
-        
+        const responseRelatorio = await fetch(`http://localhost:8080/relatorios/hoje/${id}`);
         if (responseRelatorio.ok) {
           const relatorio = await responseRelatorio.json();
-
-          if (relatorio) {
-            setRelatorioEnviado(true);
-          }
+          setRelatorioEnviado(!!(relatorio && relatorio.id));
+        } else {
+          setRelatorioEnviado(false);
         }
       } catch (err) {
         console.warn("Relatório não encontrado ou erro ao buscar");
@@ -72,6 +76,7 @@ export function PostoUsuario() {
   useEffect(() => {
     carregarRegistros();
   }, [id]);
+
 
   // ================= 📸 FUNÇÃO GENÉRICA =================
   function processarImagem(file, callback) {
@@ -119,34 +124,40 @@ export function PostoUsuario() {
   }
 
   async function finalizarCheckin() {
-    if (!fotoTempCheckin) return alert("Tire uma foto!");
-    if (checkinRegistros.length >= 3) return alert("Máximo 3 check-ins!");
+  if (!fotoTempCheckin) return alert("Tire uma foto!");
+  if (checkinRegistros.length >= 3) return alert("Máximo 3 check-ins!");
 
-    try {
-      const response = await fetch("http://localhost:8080/registros", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          postoId: Number(id),
-          tipo: "CHECKIN",
-          urlImagem: fotoTempCheckin
-        })
-      });
+  if (loading) return;
+  setLoading(true);
 
-      if (!response.ok) throw new Error(await response.text());
+  try {
+    const response = await fetch("http://localhost:8080/registros", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        postoId: Number(id),
+        tipo: "CHECKIN",
+        urlImagem: fotoTempCheckin
+      })
+    });
 
-      await carregarRegistros();
-      setFotoTempCheckin(null);
+    if (!response.ok) throw new Error(await response.text());
 
-      alert("Check-in enviado!");
+    await carregarRegistros();
+    setFotoTempCheckin(null);
 
-    } catch (err) {
-      console.error(err);
-      alert("Erro no check-in");
-    }
+    alert("Check-in enviado!");
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro no check-in");
+  } finally {
+    setLoading(false); // ✅ AQUI é o lugar certo
   }
+}
+   
 
   // ================= CHECKOUT =================
 
@@ -207,9 +218,9 @@ export function PostoUsuario() {
       }
 
       await carregarRegistros();
-      setCheckoutRegistros([]);
       setCheckoutFinalizado(true);
-
+      setCheckoutRegistros([]);
+      setCheckinRegistros([]);
       alert("Checkout finalizado!");
 
     } catch (err) {
@@ -219,7 +230,7 @@ export function PostoUsuario() {
   }
 
   // ================= UI =================
-
+  
   return (
     <div className="relative min-h-screen w-screen overflow-y-auto">
       <img src={fundo} className="absolute w-full h-full object-cover" alt="" />
@@ -234,7 +245,7 @@ export function PostoUsuario() {
           </div>
 
           <Card titulo="📸 Check-in">
-            <Botao onClick={() => inputCheckinRef.current.click()} cor="azul">
+            <Botao  disabled={loading}  onClick={() => inputCheckinRef.current.click()} cor="azul">
               Tirar Foto
             </Botao>
 
@@ -291,7 +302,7 @@ export function PostoUsuario() {
 
             <ListaFotos lista={checkoutRegistros} setImagemAberta={setImagemAberta} />
 
-            <Botao onClick={finalizarCheckout} cor="verde">
+            <Botao disabled={loading} onClick={finalizarCheckout} cor="verde">
               Finalizar Checkout
             </Botao>
 

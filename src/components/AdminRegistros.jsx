@@ -13,7 +13,7 @@ export function AdminRegistros() {
       const data = await response.json();
 
       const formatados = data.map(r => ({
-        id: r.id, 
+        id: r.id,
         foto: r.urlImagem,
         tipo: r.tipo,
         posto: r.postoId,
@@ -27,7 +27,7 @@ export function AdminRegistros() {
     }
   }
 
-  // 🔥 OCULTAR RELATÓRIO (soft delete visual)
+  // 🔥 OCULTAR UM
   async function ocultarRegistro(id) {
     try {
       const response = await fetch(
@@ -41,7 +41,6 @@ export function AdminRegistros() {
         return;
       }
 
-      // remove da tela sem reload
       setRegistros(prev => prev.filter(r => r.id !== id));
 
     } catch (err) {
@@ -49,6 +48,7 @@ export function AdminRegistros() {
     }
   }
 
+  // 🔥 OCULTAR TODOS
   async function ocultarTodos() {
     try {
       const response = await fetch(
@@ -62,7 +62,7 @@ export function AdminRegistros() {
         return;
       }
 
-      setRegistros([]); // limpa tela imediatamente
+      setRegistros([]);
 
     } catch (err) {
       console.error("Erro fetch:", err);
@@ -72,6 +72,10 @@ export function AdminRegistros() {
   useEffect(() => {
     carregarRegistros();
   }, []);
+
+  // 🔥 SEPARAÇÃO
+  const checkins = registros.filter(r => r.tipo === "CHECKIN");
+  const checkouts = registros.filter(r => r.tipo === "CHECKOUT");
 
   return (
     <div className="relative min-h-screen w-screen overflow-y-auto">
@@ -88,7 +92,7 @@ export function AdminRegistros() {
             <img src={logo} className="w-16 mb-2" />
             <h1 className="text-xl font-bold">Registros</h1>
             <p className="text-xs text-gray-500">
-              Check-ins realizados
+              Check-ins e Checkouts do dia
             </p>
           </div>
 
@@ -101,46 +105,100 @@ export function AdminRegistros() {
           </button>
 
           {/* 📸 LISTA */}
-          <div>
-            {registros.length === 0 ? (
-              <p className="text-center text-gray-500 text-sm">
-                Nenhum registro encontrado
-              </p>
-            ) : (
-              <div className="grid grid-cols-3 gap-3">
-                {registros.map((r, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-lg p-2 shadow-sm text-center"
-                  >
-                    <img
-                      src={r.foto}
-                      onClick={() => setImagemAberta(r.foto)} // 🔥 AQUI
-                      className="w-full h-24 object-cover rounded-lg mb-1 cursor-pointer hover:scale-105 transition"
-                      alt=""
-                    />
+          <div className="space-y-4">
 
-                    <p className="text-xs font-medium">
-                      Posto {r.posto}
-                    </p>
+            {/* 📸 CHECK-INS */}
+            <div>
+              <h2 className="text-sm font-semibold text-blue-700 mb-2">
+                📸 Check-ins
+              </h2>
 
-                    <p className="text-[11px] text-gray-500">
-                      {r.tipo}
-                    </p>
+              {checkins.length === 0 ? (
+                <p className="text-xs text-gray-400 text-center">
+                  Nenhum check-in
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  {checkins.map((r) => (
+                    <div
+                      key={r.id}
+                      className="bg-white rounded-lg p-2 shadow-sm text-center"
+                    >
+                      <img
+                        src={r.foto}
+                        onClick={() => setImagemAberta(r.foto)}
+                        className="w-full h-24 object-cover rounded-lg mb-1 cursor-pointer hover:scale-105 transition"
+                      />
 
-                    <p className="text-[10px] text-gray-400">
-                      {r.dataHora}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+                      <p className="text-xs font-medium">
+                        Posto {r.posto}
+                      </p>
+
+                      <p className="text-[10px] text-gray-400">
+                        {r.dataHora}
+                      </p>
+
+                      <button
+                        onClick={() => ocultarRegistro(r.id)}
+                        className="text-[10px] text-red-600 mt-1"
+                      >
+                        Ocultar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 🚪 CHECKOUTS */}
+            <div>
+              <h2 className="text-sm font-semibold text-green-700 mb-2">
+                🚪 Checkouts
+              </h2>
+
+              {checkouts.length === 0 ? (
+                <p className="text-xs text-gray-400 text-center">
+                  Nenhum checkout
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  {checkouts.map((r) => (
+                    <div
+                      key={r.id}
+                      className="bg-white rounded-lg p-2 shadow-sm text-center"
+                    >
+                      <img
+                        src={r.foto}
+                        onClick={() => setImagemAberta(r.foto)}
+                        className="w-full h-24 object-cover rounded-lg mb-1 cursor-pointer hover:scale-105 transition"
+                      />
+
+                      <p className="text-xs font-medium">
+                        Posto {r.posto}
+                      </p>
+
+                      <p className="text-[10px] text-gray-400">
+                        {r.dataHora}
+                      </p>
+
+                      <button
+                        onClick={() => ocultarRegistro(r.id)}
+                        className="text-[10px] text-red-600 mt-1"
+                      >
+                        Ocultar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
 
         </div>
       </div>
 
-      {/* 🔥 MODAL DA IMAGEM */}
+      {/* 🔥 MODAL */}
       {imagemAberta && (
         <div
           onClick={() => setImagemAberta(null)}
@@ -149,7 +207,6 @@ export function AdminRegistros() {
           <img
             src={imagemAberta}
             className="max-w-[90%] max-h-[90%] rounded-xl shadow-2xl"
-            alt=""
           />
         </div>
       )}

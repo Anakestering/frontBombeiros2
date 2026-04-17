@@ -7,85 +7,83 @@ export function PostoAdmin() {
   const { id } = useParams();
   const tipo = localStorage.getItem("tipo");
 
-  const [dados, setDados] = useState(null);
+  const [checkins, setCheckins] = useState([]);
+  const [checkouts, setCheckouts] = useState([]);
+  const [relatorio, setRelatorio] = useState(null);
+  const [checkoutFinalizado, setCheckoutFinalizado] = useState(false);
 
-  function getHoje() {
-    return new Date().toISOString().split("T")[0];
+  // 🔥 BUSCAR DO BACKEND
+  async function carregarDados() {
+    try {
+      const response = await fetch(`http://localhost:8080/registros/hoje/${id}`);
+      const data = await response.json();
+
+      const checkinList = data
+        .filter(r => r.tipo === "CHECKIN")
+        .map(r => ({
+          foto: r.urlImagem,
+          dataHora: new Date(r.dataHora).toLocaleString()
+        }));
+
+      const checkoutList = data
+        .filter(r => r.tipo === "CHECKOUT")
+        .map(r => ({
+          foto: r.urlImagem,
+          dataHora: new Date(r.dataHora).toLocaleString()
+        }));
+
+      setCheckins(checkinList);
+      setCheckouts(checkoutList);
+      setCheckoutFinalizado(checkoutList.length > 0);
+
+      const resRelatorio = await fetch(`http://localhost:8080/relatorios/hoje/${id}`);
+      if (resRelatorio.ok) {
+        const rel = await resRelatorio.json();
+        setRelatorio(rel);
+      } else {
+        setRelatorio(null);
+      }
+
+    } catch (err) {
+      console.error("Erro ao carregar dados", err);
+    }
   }
 
   useEffect(() => {
-    const carregarDados = () => {
-      try {
-        const dadosSalvos = JSON.parse(localStorage.getItem(`posto_${id}`));
-
-        // 🔥 IGNORA DADOS DE OUTRO DIA (NÃO APAGA, SÓ NÃO USA)
-        if (
-          !dadosSalvos ||
-          dadosSalvos.ultimaAtualizacao !== getHoje()
-        ) {
-          setDados(null);
-          return;
-        }
-
-        setDados(dadosSalvos);
-      } catch (error) {
-        console.error("Erro:", error);
-        setDados(null);
-      }
-    };
-
     carregarDados();
-    const intervalo = setInterval(carregarDados, 1500);
-    return () => clearInterval(intervalo);
+    const interval = setInterval(carregarDados, 3000);
+    return () => clearInterval(interval);
   }, [id]);
 
   if (tipo !== "admin") return <Navigate to="/postos" />;
 
-  if (!dados) {
-    return (
-      <BackgroundLayout>
-        <EmptyState />
-      </BackgroundLayout>
-    );
-  }
-
-  const {
-    checkinRegistros = [],
-    checkoutRegistros = [],
-    checkoutFinalizado = false,
-    relatorio = {}
-  } = dados;
-
-  const {
-    manhaPrevencoes = "",
-    manhaAtaques = "",
-    tardePrevencoes = "",
-    tardeAtaques = ""
-  } = relatorio;
-
   return (
     <BackgroundLayout>
-      <div className="w-full max-w-lg bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl space-y-5">
+      <div className="w-full max-w-lg bg-white/90 p-6 rounded-2xl shadow-2xl space-y-5">
 
         <Header titulo={`Posto ${id}`} />
 
-        <StatusCard finalizado={checkoutFinalizado} />
+        {/* ✅ STATUS SÓ SE TIVER CHECK-IN */}
+        {checkins.length > 0 && (
+          <StatusCard finalizado={checkoutFinalizado} />
+        )}
 
-        <Card titulo="Check-in">
-          <ImageSection imagens={checkinRegistros} />
-        </Card>
-
-        <Card titulo="Relatório Operacional">
-          <RelatorioSection
-            manhaPrevencoes={manhaPrevencoes}
-            manhaAtaques={manhaAtaques}
-            tardePrevencoes={tardePrevencoes}
-            tardeAtaques={tardeAtaques}
+        <Card titulo="📸 Check-in">
+          <ImageSection
+            imagens={checkins}
+            mensagemVazia="Nenhum check-in realizado"
           />
         </Card>
 
-        <Card titulo="Checkout">
-          <ImageSection imagens={checkoutRegistros} />
+        <Card titulo="📝 Relatório">
+          <RelatorioSection relatorio={relatorio} />
+        </Card>
+
+        <Card titulo="🚪 Checkout">
+          <ImageSection
+            imagens={checkouts}
+            mensagemVazia="Nenhum checkout realizado"
+          />
         </Card>
 
       </div>
@@ -142,13 +140,15 @@ function StatusCard({ finalizado }) {
 }
 
 /* 🖼️ IMAGENS */
-function ImageSection({ imagens }) {
+function ImageSection({ imagens, mensagemVazia }) {
   const [imagemSelecionada, setImagemSelecionada] = useState(null);
 
   return (
     <div>
       {imagens.length === 0 ? (
-        <p className="text-sm text-gray-500">Nenhuma imagem</p>
+        <p className="text-sm text-gray-500 text-center py-4">
+          {mensagemVazia}
+        </p>
       ) : (
         <div className="flex gap-2 flex-wrap">
           {imagens.map((img, i) => (
@@ -180,31 +180,39 @@ function ImageSection({ imagens }) {
 }
 
 /* 📝 RELATÓRIO */
-function RelatorioSection({
-  manhaPrevencoes,
-  manhaAtaques,
-  tardePrevencoes,
-  tardeAtaques
-}) {
+function RelatorioSection({ relatorio }) {
+  if (!relatorio) {
+    return (
+      <p className="text-sm text-gray-500 text-center py-4">
+        Nenhum relatório enviado
+      </p>
+    );
+  }
+
+  const {
+    manhaPrevencoes = 0,
+    manhaAtaques = 0,
+    tardePrevencoes = 0,
+    tardeAtaques = 0
+  } = relatorio;
+
   return (
     <div className="space-y-3">
       <table className="w-full text-sm border rounded-lg overflow-hidden">
         <thead>
-          <tr className="bg-gray-100 text-gray-700">
+          <tr className="bg-gray-100">
             <th className="p-2 text-left">Período</th>
             <th className="p-2 text-center">Prevenções</th>
-            <th className="p-2 text-center">Lesões por água-vivas</th>
+            <th className="p-2 text-center">Água-viva</th>
           </tr>
         </thead>
-
         <tbody>
-          <tr className="border-t">
+          <tr>
             <td className="p-2">Manhã</td>
             <td className="text-center">{manhaPrevencoes}</td>
             <td className="text-center">{manhaAtaques}</td>
           </tr>
-
-          <tr className="border-t">
+          <tr>
             <td className="p-2">Tarde</td>
             <td className="text-center">{tardePrevencoes}</td>
             <td className="text-center">{tardeAtaques}</td>
@@ -212,29 +220,10 @@ function RelatorioSection({
         </tbody>
       </table>
 
-      <Resumo
-        totalPrev={Number(manhaPrevencoes) + Number(tardePrevencoes)}
-        totalAtaques={Number(manhaAtaques) + Number(tardeAtaques)}
-      />
-    </div>
-  );
-}
-
-/* 📊 RESUMO */
-function Resumo({ totalPrev, totalAtaques }) {
-  return (
-    <div className="bg-gray-100 rounded-lg p-2 text-sm">
-      <p><strong>Total Prevenções:</strong> {totalPrev}</p>
-      <p><strong>Total lesões por água-vivas:</strong> {totalAtaques}</p>
-    </div>
-  );
-}
-
-/* ❌ EMPTY */
-function EmptyState() {
-  return (
-    <div className="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl text-center">
-      <p className="text-gray-600">Nenhum dado ainda</p>
+      <div className="bg-gray-100 rounded-lg p-2 text-sm">
+        <p><strong>Total Prevenções:</strong> {Number(manhaPrevencoes) + Number(tardePrevencoes)}</p>
+        <p><strong>Total água-viva:</strong> {Number(manhaAtaques) + Number(tardeAtaques)}</p>
+      </div>
     </div>
   );
 }
