@@ -49,6 +49,21 @@ export function PostoUsuario() {
       setCheckinRegistros(checkins);
       setCheckoutRegistros(checkouts);
 
+      // ================= 🔥 NOVO: VERIFICAR RELATÓRIO =================
+      try {
+        const responseRelatorio = await fetch(`http://localhost:8080/relatorios/posto/${id}`)
+        
+        if (responseRelatorio.ok) {
+          const relatorio = await responseRelatorio.json();
+
+          if (relatorio) {
+            setRelatorioEnviado(true);
+          }
+        }
+      } catch (err) {
+        console.warn("Relatório não encontrado ou erro ao buscar");
+      }
+
     } catch (err) {
       console.error("Erro ao carregar registros", err);
     }
@@ -157,7 +172,6 @@ export function PostoUsuario() {
     setFotoTempCheckout(null);
   }
 
-  // 🔥 SALVAR (só local)
   function salvarFotoCheckout() {
     if (!fotoTempCheckout) return alert("Tire uma foto!");
     if (checkoutRegistros.length >= 3) return alert("Máximo 3 fotos!");
@@ -171,7 +185,6 @@ export function PostoUsuario() {
     setFotoTempCheckout(null);
   }
 
-  // 🔥 FINALIZAR (envia pro backend)
   async function finalizarCheckout() {
     if (!relatorioEnviado) return alert("Envie o relatório!");
     if (checkoutRegistros.length === 0) return alert("Adicione uma foto!");
@@ -220,7 +233,6 @@ export function PostoUsuario() {
             <h1 className="text-xl font-bold">Posto {id}</h1>
           </div>
 
-          {/* CHECK-IN */}
           <Card titulo="📸 Check-in">
             <Botao onClick={() => inputCheckinRef.current.click()} cor="azul">
               Tirar Foto
@@ -246,13 +258,11 @@ export function PostoUsuario() {
             <ListaFotos lista={checkinRegistros} setImagemAberta={setImagemAberta} />
           </Card>
 
-          {/* RELATÓRIO */}
           <RelatorioForm
             postoId={id}
             onSalvo={() => setRelatorioEnviado(true)}
           />
 
-          {/* CHECKOUT */}
           <Card titulo="🚪 Checkout">
             <Botao
               onClick={() => inputCheckoutRef.current.click()}
@@ -275,7 +285,7 @@ export function PostoUsuario() {
               foto={fotoTempCheckout}
               onClick={() => setImagemAberta(fotoTempCheckout)}
               onRemover={removerFotoTempCheckout}
-              onSalvar={salvarFotoCheckout} // ✅ corrigido
+              onSalvar={salvarFotoCheckout}
               salvarLabel="Salvar"
             />
 

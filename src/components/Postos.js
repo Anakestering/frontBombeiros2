@@ -5,8 +5,8 @@ import fundo from "../assets/fundo.jpg";
 
 export function Postos() {
     const navigate = useNavigate();
-    const tipo = localStorage.getItem("tipo");
 
+    const tipo = localStorage.getItem("tipo");
     const [postos, setPostos] = useState([]);
 
     function acessarPosto(id) {

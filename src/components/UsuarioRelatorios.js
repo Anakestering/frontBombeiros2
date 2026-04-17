@@ -13,6 +13,7 @@ export function RelatorioForm({ postoId, onSalvo }) {
     async function carregarRelatorio() {
         try {
             const response = await fetch("http://localhost:8080/relatorios");
+            
 
             if (!response.ok) throw new Error();
 
