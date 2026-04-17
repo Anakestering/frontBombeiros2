@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import fundo from "../assets/fundo.jpg";
 import logo from "../assets/Logo1.png";
 
+import { sucesso, erro, confirmar, aviso } from "../utils/feedback";
+
 export function AdminRelatorios() {
     const [relatorios, setRelatorios] = useState([]);
 
@@ -19,7 +21,7 @@ export function AdminRelatorios() {
 
         } catch (error) {
             console.error(error);
-            alert("Erro ao carregar relatórios do servidor");
+            erro("Erro ao carregar relatórios do servidor");
         }
     }
 
@@ -30,55 +32,74 @@ export function AdminRelatorios() {
     // 🔥 EXPORT POR PERÍODO
     function exportarExcel() {
         if (!inicio || !fim) {
-            alert("Selecione o período primeiro!");
+            aviso("Selecione o período primeiro!");
             return;
         }
 
         const url = `http://localhost:8080/relatorios/export?inicio=${inicio}T00:00:00&fim=${fim}T23:59:59`;
         window.open(url);
+
+        sucesso("Exportação iniciada");
     }
 
     // 🔥 OCULTAR RELATÓRIO (soft delete visual)
     async function ocultarRelatorio(id) {
-        try {
-            const response = await fetch(
-                `http://localhost:8080/relatorios/ocultar/${id}`,
-                { method: "PATCH" }
-            );
+        confirmar({
+            titulo: "Ocultar relatório?",
+            texto: "Esse relatório será removido da visualização.",
+            onConfirm: async () => {
+                try {
+                    const response = await fetch(
+                        `http://localhost:8080/relatorios/ocultar/${id}`,
+                        { method: "PATCH" }
+                    );
 
-            if (!response.ok) {
-                const text = await response.text();
-                console.error("Erro backend:", text);
-                return;
+                    if (!response.ok) {
+                        const text = await response.text();
+                        console.error("Erro backend:", text);
+                        erro("Erro ao ocultar relatório");
+                        return;
+                    }
+
+                    setRelatorios(prev => prev.filter(r => r.id !== id));
+                    sucesso("Relatório ocultado");
+
+                } catch (err) {
+                    console.error("Erro fetch:", err);
+                    erro("Erro de conexão");
+                }
             }
-
-            // remove da tela sem reload
-            setRelatorios(prev => prev.filter(r => r.id !== id));
-
-        } catch (err) {
-            console.error("Erro fetch:", err);
-        }
+        });
     }
 
     async function ocultarTodos() {
-    try {
-        const response = await fetch(
-            "http://localhost:8080/relatorios/ocultar-todos",
-            { method: "PATCH" }
-        );
+        confirmar({
+            titulo: "Ocultar todos os relatórios?",
+            texto: "Essa ação não pode ser desfeita.",
+            onConfirm: async () => {
+                try {
+                    const response = await fetch(
+                        "http://localhost:8080/relatorios/ocultar-todos",
+                        { method: "PATCH" }
+                    );
 
-        if (!response.ok) {
-            const text = await response.text();
-            console.error("Erro backend:", text);
-            return;
-        }
+                    if (!response.ok) {
+                        const text = await response.text();
+                        console.error("Erro backend:", text);
+                        erro("Erro ao ocultar relatórios");
+                        return;
+                    }
 
-        setRelatorios([]); // limpa tela imediatamente
+                    setRelatorios([]);
+                    sucesso("Todos os relatórios foram ocultados");
 
-    } catch (err) {
-        console.error("Erro fetch:", err);
+                } catch (err) {
+                    console.error("Erro fetch:", err);
+                    erro("Erro de conexão");
+                }
+            }
+        });
     }
-}
 
     return (
         <div className="relative min-h-screen w-screen overflow-y-auto">
@@ -149,7 +170,6 @@ export function AdminRelatorios() {
                                             {r.nomePosto || `Posto ${r.postoId}`}
                                         </p>
 
-                                        {/* BOTÃO OCULTAR */}
                                         <button
                                             onClick={() => ocultarRelatorio(r.id)}
                                             className="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 rounded"
@@ -158,7 +178,6 @@ export function AdminRelatorios() {
                                         </button>
                                     </div>
 
-                                    {/* TABELA */}
                                     <table className="w-full text-sm border rounded-lg overflow-hidden">
                                         <thead>
                                             <tr className="bg-gray-100 text-gray-700">

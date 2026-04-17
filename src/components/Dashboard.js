@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import fundo from "../assets/fundo.jpg";
 import logo from "../assets/Logo1.png";
+import toast from "react-hot-toast";
 
 import { Card } from "../components/ui/Card";
 import { Botao } from "../components/ui/Botao";

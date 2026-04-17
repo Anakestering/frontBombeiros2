@@ -6,9 +6,12 @@ import { PostoAdmin } from "./components/Admin";
 import { AdminRegistros } from "./components/AdminRegistros";
 import { AdminRelatorios } from "./components/AdminRelatorios";
 
+import { Toaster } from "react-hot-toast";
+
 function App() {
   return (
     <BrowserRouter>
+    <Toaster position="top-right" />
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/posto/:id" element={<PostoUsuario />} />

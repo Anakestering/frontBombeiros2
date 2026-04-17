@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/Logo1.png";
 import fundo from "../assets/fundo.jpg";
+import toast from "react-hot-toast";
 
 const USUARIOS = {
   admin: { senha: "123", tipo: "admin" },

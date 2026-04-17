@@ -2,6 +2,7 @@ import { useParams, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import fundo from "../assets/fundo.jpg";
 import logo from "../assets/Logo1.png";
+import toast from "react-hot-toast";
 
 export function PostoAdmin() {
   const { id } = useParams();

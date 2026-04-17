@@ -1,3 +1,47 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.swal-btn-confirm {
+  background-color: #16a34a;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 8px;
+  margin-right: 8px;
+  font-size: 13px;
+}
+
+.swal-btn-cancel {
+  background-color: #dc2626;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.swal-btn-confirm:hover {
+  background-color: #15803d;
+}
+
+.swal-btn-cancel:hover {
+  background-color: #b91c1c;
+}
+
+.btn-confirm {
+  background: #16a34a !important;
+  color: white !important;
+  padding: 8px 14px !important;
+  border-radius: 8px !important;
+  margin-right: 10px !important;
+  font-size: 13px !important;
+  border: none !important;
+}
+
+.btn-cancel {
+  background: #dc2626 !important;
+  color: white !important;
+  padding: 8px 14px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  border: none !important;
+}
