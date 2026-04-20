@@ -1,54 +1,72 @@
-import toast from "react-hot-toast";
 import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 
 // 🔔 sucesso
 export function sucesso(msg) {
-    toast.success(msg, {
-        duration: 2500
-    });
+  toast.success(msg, { duration: 2000 });
 }
 
 // ❌ erro
 export function erro(msg) {
-    toast.error(msg, {
-        duration: 3000
-    });
+  toast.error(msg, { duration: 2500 });
 }
 
 // ⚠️ aviso
 export function aviso(msg) {
-    toast(msg, {
-        duration: 2500
-    });
+  toast(msg, { duration: 2000, icon: "⚠️" });
 }
 
-// ❓ confirmação (AGORA CORRETO E MAIS FLEXÍVEL)
-export async function confirmar({ titulo, texto }) {
-    const result = await Swal.fire({
-        title: titulo,
-        text: texto,
+let loadingToastId = null;
 
-        icon: "warning",
-
-        showCancelButton: true,
-        confirmButtonText: "Confirmar",
-        cancelButtonText: "Cancelar",
-
-        confirmButtonColor: "#16a34a",
-        cancelButtonColor: "#dc2626",
-
-        width: "320px",
-        padding: "1rem",
-
-        confirmButton: "swal-btn-confirm",
-        cancelButton: "swal-btn-cancel",
-
-        customClass: {
-            popup: "rounded-xl text-sm"
-        },
-
-        
-    });
-
-    return result.isConfirmed;
+// ⏳ loading
+export function loading(msg = "Processando...") {
+  loadingToastId = toast.loading(msg);
 }
+
+// ✅ finalizar loading com sucesso
+export function loadingSucesso(msg = "Concluído!") {
+  if (loadingToastId) toast.dismiss(loadingToastId);
+  sucesso(msg);
+}
+
+// ❌ finalizar loading com erro
+export function loadingErro(msg = "Erro ao processar") {
+  if (loadingToastId) toast.dismiss(loadingToastId);
+  erro(msg);
+}
+
+// ❓ confirmação (LEVE e consistente)
+export async function confirmar({
+  titulo,
+  texto,
+  tipo = "warning",
+  confirmText = "Sim",
+  cancelText = "Não"
+}) {
+  const result = await Swal.fire({
+    title: titulo,
+    text: texto,
+    icon: tipo,
+
+    showCancelButton: true,
+    confirmButtonText: confirmText,
+    cancelButtonText: cancelText,
+
+    reverseButtons: true,
+    width: 320,
+
+    customClass: {
+      popup: "swal-clean",
+      title: "swal-title",
+      htmlContainer: "swal-text",
+      confirmButton: "swal-confirm",
+      cancelButton: "swal-cancel"
+    },
+
+    buttonsStyling: false
+  });
+
+  return result.isConfirmed;
+}
+
+ 

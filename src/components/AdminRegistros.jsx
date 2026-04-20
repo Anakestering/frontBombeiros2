@@ -1,18 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import fundo from "../assets/fundo.jpg";
 import logo from "../assets/Logo1.png";
 
-// 🔥 IMPORTAÇÕES DO TEU SISTEMA NOVO
-import { confirmar, sucesso, erro } from "../utils/feedback";
+import {
+  confirmar,
+  sucesso,
+  erro
+} from "../utils/feedback";
 
 export function AdminRegistros() {
   const [registros, setRegistros] = useState([]);
   const [imagemAberta, setImagemAberta] = useState(null);
+  const [loadingId, setLoadingId] = useState(null);
 
   // 🔥 BUSCAR DO BACKEND
   async function carregarRegistros() {
     try {
       const response = await fetch("http://localhost:8080/registros");
+
+      if (!response.ok) throw new Error();
+
       const data = await response.json();
 
       const formatados = data.map(r => ({
@@ -24,20 +31,27 @@ export function AdminRegistros() {
       }));
 
       setRegistros(formatados);
+
     } catch (err) {
       console.error(err);
       erro("Erro ao carregar registros");
     }
   }
 
-  // 🔥 OCULTAR UM (COM CONFIRMAÇÃO)
+  useEffect(() => {
+    carregarRegistros();
+  }, []);
+
+  // 🔥 OCULTAR UM REGISTRO
   async function ocultarRegistro(id) {
     const ok = await confirmar({
       titulo: "Ocultar registro",
-      texto: "Tem certeza que deseja ocultar este registro?"
+      texto: "Esse registro será removido da visualização."
     });
 
     if (!ok) return;
+
+    setLoadingId(id);
 
     try {
       const response = await fetch(
@@ -56,14 +70,16 @@ export function AdminRegistros() {
     } catch (err) {
       console.error(err);
       erro("Erro no servidor");
+    } finally {
+      setLoadingId(null);
     }
   }
 
-  // 🔥 OCULTAR TODOS (COM CONFIRMAÇÃO FORTE)
+  // 🔥 OCULTAR TODOS
   async function ocultarTodos() {
     const ok = await confirmar({
-      titulo: "Ocultar TODOS",
-      texto: "Isso vai ocultar todos os registros do dia. Deseja continuar?"
+      titulo: "ATENÇÃO",
+      texto: "Isso vai ocultar TODOS os registros do dia."
     });
 
     if (!ok) return;
@@ -88,19 +104,22 @@ export function AdminRegistros() {
     }
   }
 
-  useEffect(() => {
-    carregarRegistros();
-  }, []);
+  // 🔥 SEPARAÇÃO OTIMIZADA
+  const checkins = useMemo(
+    () => registros.filter(r => r.tipo === "CHECKIN"),
+    [registros]
+  );
 
-  // 🔥 SEPARAÇÃO
-  const checkins = registros.filter(r => r.tipo === "CHECKIN");
-  const checkouts = registros.filter(r => r.tipo === "CHECKOUT");
+  const checkouts = useMemo(
+    () => registros.filter(r => r.tipo === "CHECKOUT"),
+    [registros]
+  );
 
   return (
     <div className="relative min-h-screen w-screen overflow-y-auto">
 
       {/* FUNDO */}
-      <img src={fundo} className="absolute w-full h-full object-cover" />
+      <img src={fundo} className="absolute w-full h-full object-cover" alt="" />
       <div className="absolute w-full h-full backdrop-blur-sm bg-black/30"></div>
 
       <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
@@ -109,10 +128,10 @@ export function AdminRegistros() {
 
           {/* HEADER */}
           <div className="flex flex-col items-center border-b pb-3">
-            <img src={logo} className="w-14 mb-2" />
+            <img src={logo} className="w-14 mb-2" alt="logo" />
             <h1 className="text-xl font-bold">Registros</h1>
             <p className="text-xs text-gray-500">
-              Check-ins e Checkouts do dia
+              Checkins e Checkouts do dia
             </p>
           </div>
 
@@ -127,15 +146,15 @@ export function AdminRegistros() {
           {/* LISTA */}
           <div className="space-y-6">
 
-            {/* CHECKIN */}
+            {/* CHECKINS */}
             <div>
               <h2 className="text-xs font-semibold text-blue-600/80 mb-2 uppercase tracking-wide">
-                📸 Check-ins
+               Checkins
               </h2>
 
               {checkins.length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-3">
-                  Nenhum check-in
+                  Nenhum checkin
                 </p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -160,8 +179,9 @@ export function AdminRegistros() {
                       </p>
 
                       <button
+                        disabled={loadingId === r.id}
                         onClick={() => ocultarRegistro(r.id)}
-                        className="text-[10px] text-red-500 opacity-0 group-hover:opacity-100 transition mt-1"
+                        className="text-[10px] text-red-500 opacity-0 group-hover:opacity-100 transition mt-1 disabled:opacity-40"
                       >
                         ocultar
                       </button>
@@ -171,10 +191,10 @@ export function AdminRegistros() {
               )}
             </div>
 
-            {/* CHECKOUT */}
+            {/* CHECKOUTS */}
             <div>
               <h2 className="text-xs font-semibold text-green-600/80 mb-2 uppercase tracking-wide">
-                🚪 Checkouts
+                Checkouts
               </h2>
 
               {checkouts.length === 0 ? (
@@ -204,8 +224,9 @@ export function AdminRegistros() {
                       </p>
 
                       <button
+                        disabled={loadingId === r.id}
                         onClick={() => ocultarRegistro(r.id)}
-                        className="text-[10px] text-red-500 opacity-0 group-hover:opacity-100 transition mt-1"
+                        className="text-[10px] text-red-500 opacity-0 group-hover:opacity-100 transition mt-1 disabled:opacity-40"
                       >
                         ocultar
                       </button>
@@ -219,7 +240,7 @@ export function AdminRegistros() {
         </div>
       </div>
 
-      {/* MODAL */}
+      {/* MODAL IMAGEM */}
       {imagemAberta && (
         <div
           onClick={() => setImagemAberta(null)}
@@ -228,6 +249,7 @@ export function AdminRegistros() {
           <img
             src={imagemAberta}
             className="max-w-[90%] max-h-[90%] rounded-xl shadow-2xl"
+            alt="registro"
           />
         </div>
       )}

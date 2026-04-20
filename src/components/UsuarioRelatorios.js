@@ -98,14 +98,14 @@ export function RelatorioForm({ postoId, onSalvo }) {
 
     return (
         <div className="bg-white rounded-xl p-3 shadow-sm space-y-2">
-            <p className="font-semibold">📝 Relatório</p>
+            <p className="font-semibold">Relatório</p>
 
             <table className="w-full text-sm border rounded-lg overflow-hidden">
                 <thead>
                     <tr className="bg-gray-100">
                         <th className="p-2 text-left">Período</th>
                         <th className="p-2 text-center">Prevenções</th>
-                        <th className="p-2 text-center">Ataques</th>
+                        <th className="p-2 text-center">Lesões Água-viva</th>
                     </tr>
                 </thead>
 

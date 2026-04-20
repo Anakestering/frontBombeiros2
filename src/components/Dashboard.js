@@ -108,7 +108,7 @@ export function PostoUsuario() {
     reader.readAsDataURL(file);
   }
 
-  // ================= CHECK-IN =================
+  // ================= CHECKIN =================
 
   function capturarFotoCheckin(e) {
     const file = e.target.files[0];
@@ -126,7 +126,7 @@ export function PostoUsuario() {
 
   async function finalizarCheckin() {
   if (!fotoTempCheckin) return alert("Tire uma foto!");
-  if (checkinRegistros.length >= 3) return alert("Máximo 3 check-ins!");
+  if (checkinRegistros.length >= 3) return alert("Máximo 3 checkins!");
 
   if (loading) return;
   setLoading(true);
@@ -149,13 +149,13 @@ export function PostoUsuario() {
     await carregarRegistros();
     setFotoTempCheckin(null);
 
-    alert("Check-in enviado!");
+    alert("Checkin enviado!");
 
   } catch (err) {
     console.error(err);
-    alert("Erro no check-in");
+    alert("Erro no checkin");
   } finally {
-    setLoading(false); // ✅ AQUI é o lugar certo
+    setLoading(false); 
   }
 }
    
@@ -167,7 +167,7 @@ export function PostoUsuario() {
     if (!file) return;
 
     if (checkinRegistros.length === 0) {
-      return alert("Faça pelo menos 1 check-in!");
+      return alert("Faça pelo menos 1 checkin!");
     }
 
     if (!relatorioEnviado) {
@@ -245,7 +245,7 @@ export function PostoUsuario() {
             <h1 className="text-xl font-bold">Posto {id}</h1>
           </div>
 
-          <Card titulo="📸 Check-in">
+          <Card titulo="Checkin">
             <Botao  disabled={loading}  onClick={() => inputCheckinRef.current.click()} cor="azul">
               Tirar Foto
             </Botao>
@@ -275,7 +275,7 @@ export function PostoUsuario() {
             onSalvo={() => setRelatorioEnviado(true)}
           />
 
-          <Card titulo="🚪 Checkout">
+          <Card titulo="Checkout">
             <Botao
               onClick={() => inputCheckoutRef.current.click()}
               cor={relatorioEnviado ? "verde" : "cinza"}

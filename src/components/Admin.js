@@ -1,8 +1,9 @@
 import { useParams, Navigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import fundo from "../assets/fundo.jpg";
 import logo from "../assets/Logo1.png";
-import toast from "react-hot-toast";
+
+import { erro } from "../utils/feedback";
 
 export function PostoAdmin() {
   const { id } = useParams();
@@ -13,11 +14,25 @@ export function PostoAdmin() {
   const [relatorio, setRelatorio] = useState(null);
   const [checkoutFinalizado, setCheckoutFinalizado] = useState(false);
 
-  // 🔥 BUSCAR DO BACKEND
+  const carregando = useRef(false);
+
+  // 🔥 BUSCAR DO BACKEND (SEGURO)
   async function carregarDados() {
+    if (carregando.current) return;
+    carregando.current = true;
+
     try {
-      const response = await fetch(`http://localhost:8080/registros/hoje/${id}`);
-      const data = await response.json();
+      // =========================
+      // REGISTROS
+      // =========================
+      const response = await fetch(
+        `http://localhost:8080/registros/hoje/${id}`
+      );
+
+      if (!response.ok) throw new Error("Erro registros");
+
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : [];
 
       const checkinList = data
         .filter(r => r.tipo === "CHECKIN")
@@ -37,9 +52,16 @@ export function PostoAdmin() {
       setCheckouts(checkoutList);
       setCheckoutFinalizado(checkoutList.length > 0);
 
-      const resRelatorio = await fetch(`http://localhost:8080/relatorios/hoje/${id}`);
+      // =========================
+      // RELATÓRIO
+      // =========================
+      const resRelatorio = await fetch(
+        `http://localhost:8080/relatorios/hoje/${id}`
+      );
+
       if (resRelatorio.ok) {
-        const rel = await resRelatorio.json();
+        const relText = await resRelatorio.text();
+        const rel = relText ? JSON.parse(relText) : null;
         setRelatorio(rel);
       } else {
         setRelatorio(null);
@@ -47,12 +69,19 @@ export function PostoAdmin() {
 
     } catch (err) {
       console.error("Erro ao carregar dados", err);
+      erro("Erro ao carregar dados do posto");
+    } finally {
+      carregando.current = false;
     }
   }
 
   useEffect(() => {
     carregarDados();
-    const interval = setInterval(carregarDados, 3000);
+
+    const interval = setInterval(() => {
+      carregarDados();
+    }, 3000);
+
     return () => clearInterval(interval);
   }, [id]);
 
@@ -64,23 +93,22 @@ export function PostoAdmin() {
 
         <Header titulo={`Posto ${id}`} />
 
-        {/* ✅ STATUS SÓ SE TIVER CHECK-IN */}
         {checkins.length > 0 && (
           <StatusCard finalizado={checkoutFinalizado} />
         )}
 
-        <Card titulo="📸 Check-in">
+        <Card titulo="Checkin">
           <ImageSection
             imagens={checkins}
-            mensagemVazia="Nenhum check-in realizado"
+            mensagemVazia="Nenhum checkin realizado"
           />
         </Card>
 
-        <Card titulo="📝 Relatório">
+        <Card titulo="Relatório">
           <RelatorioSection relatorio={relatorio} />
         </Card>
 
-        <Card titulo="🚪 Checkout">
+        <Card titulo="Checkout">
           <ImageSection
             imagens={checkouts}
             mensagemVazia="Nenhum checkout realizado"
@@ -92,11 +120,13 @@ export function PostoAdmin() {
   );
 }
 
-/* 🌫️ FUNDO */
+/* =========================
+   LAYOUT
+========================= */
 function BackgroundLayout({ children }) {
   return (
     <div className="relative min-h-screen w-screen overflow-y-auto">
-      <img src={fundo} className="absolute w-full h-full object-cover" />
+      <img src={fundo} className="absolute w-full h-full object-cover" alt="" />
       <div className="absolute w-full h-full backdrop-blur-sm bg-black/30"></div>
 
       <div className="relative z-10 flex items-center justify-center h-full px-4">
@@ -106,18 +136,22 @@ function BackgroundLayout({ children }) {
   );
 }
 
-/* 🔝 HEADER */
+/* =========================
+   HEADER
+========================= */
 function Header({ titulo }) {
   return (
     <div className="flex flex-col items-center border-b pb-3">
-      <img src={logo} className="w-16 mb-2" />
+      <img src={logo} className="w-16 mb-2" alt="logo" />
       <h1 className="text-xl font-bold">{titulo}</h1>
       <p className="text-xs text-gray-500">Informações do posto</p>
     </div>
   );
 }
 
-/* 📦 CARD */
+/* =========================
+   CARD
+========================= */
 function Card({ titulo, children }) {
   return (
     <div className="bg-white rounded-xl p-3 shadow-sm space-y-2">
@@ -127,7 +161,9 @@ function Card({ titulo, children }) {
   );
 }
 
-/* 🚦 STATUS */
+/* =========================
+   STATUS
+========================= */
 function StatusCard({ finalizado }) {
   return (
     <div
@@ -140,7 +176,9 @@ function StatusCard({ finalizado }) {
   );
 }
 
-/* 🖼️ IMAGENS */
+/* =========================
+   IMAGENS
+========================= */
 function ImageSection({ imagens, mensagemVazia }) {
   const [imagemSelecionada, setImagemSelecionada] = useState(null);
 
@@ -156,6 +194,7 @@ function ImageSection({ imagens, mensagemVazia }) {
             <div key={i} className="text-center">
               <img
                 src={img.foto}
+                alt="Registro do posto"
                 onClick={() => setImagemSelecionada(img.foto)}
                 className="w-20 h-20 rounded-lg shadow cursor-pointer hover:scale-105 transition"
               />
@@ -172,6 +211,7 @@ function ImageSection({ imagens, mensagemVazia }) {
         >
           <img
             src={imagemSelecionada}
+            alt="Imagem ampliada do registro"
             className="max-w-[90%] max-h-[90%] rounded-xl"
           />
         </div>
@@ -180,7 +220,9 @@ function ImageSection({ imagens, mensagemVazia }) {
   );
 }
 
-/* 📝 RELATÓRIO */
+/* =========================
+   RELATÓRIO
+========================= */
 function RelatorioSection({ relatorio }) {
   if (!relatorio) {
     return (
@@ -204,15 +246,17 @@ function RelatorioSection({ relatorio }) {
           <tr className="bg-gray-100">
             <th className="p-2 text-left">Período</th>
             <th className="p-2 text-center">Prevenções</th>
-            <th className="p-2 text-center">Água-viva</th>
+            <th className="p-2 text-center">Ataques de Água-viva</th>
           </tr>
         </thead>
+
         <tbody>
           <tr>
             <td className="p-2">Manhã</td>
             <td className="text-center">{manhaPrevencoes}</td>
             <td className="text-center">{manhaAtaques}</td>
           </tr>
+
           <tr>
             <td className="p-2">Tarde</td>
             <td className="text-center">{tardePrevencoes}</td>
@@ -222,8 +266,14 @@ function RelatorioSection({ relatorio }) {
       </table>
 
       <div className="bg-gray-100 rounded-lg p-2 text-sm">
-        <p><strong>Total Prevenções:</strong> {Number(manhaPrevencoes) + Number(tardePrevencoes)}</p>
-        <p><strong>Total água-viva:</strong> {Number(manhaAtaques) + Number(tardeAtaques)}</p>
+        <p>
+          <strong>Total Prevenções:</strong>{" "}
+          {Number(manhaPrevencoes) + Number(tardePrevencoes)}
+        </p>
+        <p>
+          <strong>Total ataques de água-viva:</strong>{" "}
+          {Number(manhaAtaques) + Number(tardeAtaques)}
+        </p>
       </div>
     </div>
   );

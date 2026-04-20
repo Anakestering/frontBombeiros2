@@ -2,7 +2,15 @@ import { useState, useEffect } from "react";
 import fundo from "../assets/fundo.jpg";
 import logo from "../assets/Logo1.png";
 
-import { sucesso, erro, confirmar, aviso } from "../utils/feedback";
+import {
+    loading,
+    loadingSucesso,
+    loadingErro,
+    sucesso,
+    erro,
+    confirmar,
+    aviso
+} from "../utils/feedback";
 
 export function AdminRelatorios() {
     const [relatorios, setRelatorios] = useState([]);
@@ -23,6 +31,7 @@ export function AdminRelatorios() {
             console.error(error);
             erro("Erro ao carregar relatórios do servidor");
         }
+        
     }
 
     useEffect(() => {
@@ -30,75 +39,100 @@ export function AdminRelatorios() {
     }, []);
 
     // 🔥 EXPORT POR PERÍODO
-    function exportarExcel() {
+    async function exportarExcel() {
         if (!inicio || !fim) {
             aviso("Selecione o período primeiro!");
             return;
         }
 
-        const url = `http://localhost:8080/relatorios/export?inicio=${inicio}T00:00:00&fim=${fim}T23:59:59`;
-        window.open(url);
+        loading("Gerando relatório...");
 
-        sucesso("Exportação iniciada");
+        try {
+            const response = await fetch(
+                `http://localhost:8080/relatorios/export?inicio=${inicio}T00:00:00&fim=${fim}T23:59:59`
+            );
+
+            if (!response.ok) throw new Error();
+
+            const blob = await response.blob();
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `relatorios_${inicio}_${fim}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+
+            loadingSucesso("Download concluído!");
+
+        } catch (err) {
+            console.error(err);
+            loadingErro("Erro ao baixar relatório");
+        }
     }
 
-    // 🔥 OCULTAR RELATÓRIO (soft delete visual)
+    // 🔥 OCULTAR RELATÓRIO
     async function ocultarRelatorio(id) {
-        confirmar({
+        const ok = await confirmar({
             titulo: "Ocultar relatório?",
-            texto: "Esse relatório será removido da visualização.",
-            onConfirm: async () => {
-                try {
-                    const response = await fetch(
-                        `http://localhost:8080/relatorios/ocultar/${id}`,
-                        { method: "PATCH" }
-                    );
-
-                    if (!response.ok) {
-                        const text = await response.text();
-                        console.error("Erro backend:", text);
-                        erro("Erro ao ocultar relatório");
-                        return;
-                    }
-
-                    setRelatorios(prev => prev.filter(r => r.id !== id));
-                    sucesso("Relatório ocultado");
-
-                } catch (err) {
-                    console.error("Erro fetch:", err);
-                    erro("Erro de conexão");
-                }
-            }
+            texto: "Esse relatório será removido da visualização."
         });
+
+        if (!ok) return;
+
+        try {
+            const response = await fetch(
+                `http://localhost:8080/relatorios/ocultar/${id}`,
+                { method: "PATCH" }
+            );
+
+            if (!response.ok) {
+                const text = await response.text();
+                console.error("Erro backend:", text);
+                erro("Erro ao ocultar relatório");
+                return;
+            }
+
+            setRelatorios(prev => prev.filter(r => r.id !== id));
+            sucesso("Relatório ocultado");
+
+        } catch (err) {
+            console.error("Erro fetch:", err);
+            erro("Erro de conexão");
+        }
     }
 
+    // 🔥 OCULTAR TODOS
     async function ocultarTodos() {
-        confirmar({
+        const ok = await confirmar({
             titulo: "Ocultar todos os relatórios?",
-            texto: "Essa ação não pode ser desfeita.",
-            onConfirm: async () => {
-                try {
-                    const response = await fetch(
-                        "http://localhost:8080/relatorios/ocultar-todos",
-                        { method: "PATCH" }
-                    );
-
-                    if (!response.ok) {
-                        const text = await response.text();
-                        console.error("Erro backend:", text);
-                        erro("Erro ao ocultar relatórios");
-                        return;
-                    }
-
-                    setRelatorios([]);
-                    sucesso("Todos os relatórios foram ocultados");
-
-                } catch (err) {
-                    console.error("Erro fetch:", err);
-                    erro("Erro de conexão");
-                }
-            }
+            texto: "Essa ação não pode ser desfeita."
         });
+
+        if (!ok) return;
+
+        try {
+            const response = await fetch(
+                "http://localhost:8080/relatorios/ocultar-todos",
+                { method: "PATCH" }
+            );
+
+            if (!response.ok) {
+                const text = await response.text();
+                console.error("Erro backend:", text);
+                erro("Erro ao ocultar relatórios");
+                return;
+            }
+
+            setRelatorios([]);
+            sucesso("Todos os relatórios foram ocultados");
+
+        } catch (err) {
+            console.error("Erro fetch:", err);
+            erro("Erro de conexão");
+        }
     }
 
     return (
@@ -166,9 +200,17 @@ export function AdminRelatorios() {
                                 <div key={r.id} className="bg-white rounded-xl p-3 shadow-sm">
 
                                     <div className="flex justify-between items-center mb-2">
-                                        <p className="font-semibold text-sm">
-                                            {r.nomePosto || `Posto ${r.postoId}`}
-                                        </p>
+                                        <div>
+                                            <p className="font-semibold text-sm">
+                                                {r.nomePosto || `Posto ${r.postoId}`}
+                                            </p>
+
+                                            <p className="text-xs text-gray-500">
+                                                {r.dataHora
+                                                    ? new Date(r.dataHora).toLocaleString()
+                                                    : "Sem data"}
+                                            </p>
+                                        </div>
 
                                         <button
                                             onClick={() => ocultarRelatorio(r.id)}

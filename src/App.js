@@ -5,6 +5,7 @@ import { PostoUsuario } from "./components/Dashboard";
 import { PostoAdmin } from "./components/Admin";
 import { AdminRegistros } from "./components/AdminRegistros";
 import { AdminRelatorios } from "./components/AdminRelatorios";
+import "sweetalert2/dist/sweetalert2.min.css";
 
 import { Toaster } from "react-hot-toast";
 
