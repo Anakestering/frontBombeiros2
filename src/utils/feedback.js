@@ -3,17 +3,17 @@ import toast from "react-hot-toast";
 
 // 🔔 sucesso
 export function sucesso(msg) {
-  toast.success(msg, { duration: 2000 });
+  toast.success(msg, { duration: 3000 });
 }
 
 // ❌ erro
 export function erro(msg) {
-  toast.error(msg, { duration: 2500 });
+  toast.error(msg, { duration: 3000 });
 }
 
 // ⚠️ aviso
 export function aviso(msg) {
-  toast(msg, { duration: 2000, icon: "⚠️" });
+  toast(msg, { duration: 3000, icon: "⚠️" });
 }
 
 let loadingToastId = null;

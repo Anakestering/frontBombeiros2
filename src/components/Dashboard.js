@@ -210,7 +210,7 @@ export function PostoUsuario() {
     setCheckoutRegistros(prev => [...prev, novo]);
     setFotoTempCheckout(null);
 
-    sucesso("Foto adicionada");
+    sucesso("Foto adicionada, confirme o checkout para finalizar o dia.");
   }
 
   async function finalizarCheckout() {
