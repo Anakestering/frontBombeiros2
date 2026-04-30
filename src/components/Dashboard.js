@@ -9,7 +9,7 @@ import { PreviewFoto } from "../components/ui/PreviewFoto";
 import { ListaFotos } from "../components/ui/ListarFotos";
 import { RelatorioForm } from "../components/UsuarioRelatorios";
 
-// 🔥 NOVO IMPORT
+
 import {
   sucesso,
   erro,
@@ -18,7 +18,7 @@ import {
   loadingSucesso,
   loadingErro,
   confirmar
-} from "../utils/feedback"; // ajusta o caminho se precisar
+} from "../utils/feedback"; 
 
 export function PostoUsuario() {
   const { id } = useParams();
@@ -39,7 +39,7 @@ export function PostoUsuario() {
 
   const [relatorioEnviado, setRelatorioEnviado] = useState(false);
 
-  // ================= BACKEND =================
+ 
   async function carregarRegistros() {
     try {
       const response = await fetch(`http://localhost:8080/registros/hoje/${id}`);
@@ -86,7 +86,7 @@ export function PostoUsuario() {
     carregarRegistros();
   }, [id]);
 
-  // ================= IMG =================
+  
   function processarImagem(file, callback) {
     const img = new Image();
     const reader = new FileReader();

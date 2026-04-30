@@ -13,7 +13,7 @@ export function AdminRegistros() {
   const [imagemAberta, setImagemAberta] = useState(null);
   const [loadingId, setLoadingId] = useState(null);
 
-  // 🔥 BUSCAR DO BACKEND
+ 
   async function carregarRegistros() {
     try {
       const response = await fetch("http://localhost:8080/registros");
@@ -42,7 +42,7 @@ export function AdminRegistros() {
     carregarRegistros();
   }, []);
 
-  // 🔥 OCULTAR UM REGISTRO
+  
   async function ocultarRegistro(id) {
     const ok = await confirmar({
       titulo: "Ocultar registro",
@@ -75,7 +75,7 @@ export function AdminRegistros() {
     }
   }
 
-  // 🔥 OCULTAR TODOS
+
   async function ocultarTodos() {
     const ok = await confirmar({
       titulo: "ATENÇÃO",
@@ -104,7 +104,7 @@ export function AdminRegistros() {
     }
   }
 
-  // 🔥 SEPARAÇÃO OTIMIZADA
+
   const checkins = useMemo(
     () => registros.filter(r => r.tipo === "CHECKIN"),
     [registros]

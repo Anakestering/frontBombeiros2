@@ -26,7 +26,7 @@ export function Login() {
       [name]: value
     }));
 
-    if (erro) setErro(""); // limpa erro ao digitar
+    if (erro) setErro("");
   }
 
   function handleLogin(e) {
@@ -58,7 +58,7 @@ export function Login() {
   );
 }
 
-/* 🧩 COMPONENTES */
+//COMPONENTES
 
 function Background() {
   return (

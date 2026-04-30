@@ -2,14 +2,13 @@ import { useState, useEffect } from "react";
 
 // 🔥 feedback padronizado
 import {
-  sucesso,
   erro,
   aviso,
   loading,
   loadingSucesso,
   loadingErro,
   confirmar
-} from "../utils/feedback"; // ajusta o caminho se precisar
+} from "../utils/feedback";
 
 export function RelatorioForm({ postoId, onSalvo }) {
 

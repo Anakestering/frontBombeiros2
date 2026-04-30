@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import logo from "../assets/Logo1.png";
 import fundo from "../assets/fundo.jpg";
-import toast from "react-hot-toast";
 
 export function Postos() {
     const navigate = useNavigate();
@@ -42,7 +41,7 @@ export function Postos() {
     );
 }
 
-/* 🌫️ FUNDO */
+//FUNDO
 function Background() {
     return (
         <>
@@ -52,7 +51,7 @@ function Background() {
     );
 }
 
-/* 🔝 HEADER */
+
 function Header({ tipo, navigate }) {
     return (
         <div className="w-full max-w-sm mx-auto flex items-center justify-between p-4">
@@ -79,7 +78,7 @@ function Header({ tipo, navigate }) {
     );
 }
 
-/* 📦 CARD */
+
 function PostoCard({ posto, onClick }) {
     return (
         <div

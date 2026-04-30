@@ -1,41 +1,41 @@
 import Swal from "sweetalert2";
 import toast from "react-hot-toast";
 
-// 🔔 sucesso
+// sucesso
 export function sucesso(msg) {
   toast.success(msg, { duration: 3000 });
 }
 
-// ❌ erro
+// erro
 export function erro(msg) {
   toast.error(msg, { duration: 3000 });
 }
 
-// ⚠️ aviso
+// aviso
 export function aviso(msg) {
   toast(msg, { duration: 3000, icon: "⚠️" });
 }
 
 let loadingToastId = null;
 
-// ⏳ loading
+// loading
 export function loading(msg = "Processando...") {
   loadingToastId = toast.loading(msg);
 }
 
-// ✅ finalizar loading com sucesso
+// finalizar loading com sucesso
 export function loadingSucesso(msg = "Concluído!") {
   if (loadingToastId) toast.dismiss(loadingToastId);
   sucesso(msg);
 }
 
-// ❌ finalizar loading com erro
+// finalizar loading com erro
 export function loadingErro(msg = "Erro ao processar") {
   if (loadingToastId) toast.dismiss(loadingToastId);
   erro(msg);
 }
 
-// ❓ confirmação (LEVE e consistente)
+// confirmação (LEVE e consistente)
 export async function confirmar({
   titulo,
   texto,

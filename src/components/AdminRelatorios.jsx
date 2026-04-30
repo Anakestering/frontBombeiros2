@@ -38,7 +38,7 @@ export function AdminRelatorios() {
         carregarRelatorios();
     }, []);
 
-    // 🔥 EXPORT POR PERÍODO
+    
     async function exportarExcel() {
         if (!inicio || !fim) {
             aviso("Selecione o período primeiro!");
@@ -73,7 +73,6 @@ export function AdminRelatorios() {
         }
     }
 
-    // 🔥 OCULTAR RELATÓRIO
     async function ocultarRelatorio(id) {
         const ok = await confirmar({
             titulo: "Ocultar relatório?",
@@ -104,7 +103,7 @@ export function AdminRelatorios() {
         }
     }
 
-    // 🔥 OCULTAR TODOS
+   
     async function ocultarTodos() {
         const ok = await confirmar({
             titulo: "Ocultar todos os relatórios?",

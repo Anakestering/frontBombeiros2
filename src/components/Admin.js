@@ -16,15 +16,12 @@ export function PostoAdmin() {
 
   const carregando = useRef(false);
 
-  // 🔥 BUSCAR DO BACKEND (SEGURO)
+  
   async function carregarDados() {
     if (carregando.current) return;
     carregando.current = true;
 
     try {
-      // =========================
-      // REGISTROS
-      // =========================
       const response = await fetch(
         `http://localhost:8080/registros/hoje/${id}`
       );
@@ -52,9 +49,8 @@ export function PostoAdmin() {
       setCheckouts(checkoutList);
       setCheckoutFinalizado(checkoutList.length > 0);
 
-      // =========================
+      
       // RELATÓRIO
-      // =========================
       const resRelatorio = await fetch(
         `http://localhost:8080/relatorios/hoje/${id}`
       );
@@ -85,7 +81,7 @@ export function PostoAdmin() {
     return () => clearInterval(interval);
   }, [id]);
 
-  if (tipo !== "admin") return <Navigate to="/postos" />;
+  if (tipo !== "admin") return <Navigate to="/postos/ordenado" />;
 
   return (
     <BackgroundLayout>
@@ -120,9 +116,7 @@ export function PostoAdmin() {
   );
 }
 
-/* =========================
-   LAYOUT
-========================= */
+//LAYOUT
 function BackgroundLayout({ children }) {
   return (
     <div className="relative min-h-screen w-screen overflow-y-auto">
@@ -136,9 +130,7 @@ function BackgroundLayout({ children }) {
   );
 }
 
-/* =========================
-   HEADER
-========================= */
+// HEADER
 function Header({ titulo }) {
   return (
     <div className="flex flex-col items-center border-b pb-3">
@@ -149,9 +141,7 @@ function Header({ titulo }) {
   );
 }
 
-/* =========================
-   CARD
-========================= */
+//CARD
 function Card({ titulo, children }) {
   return (
     <div className="bg-white rounded-xl p-3 shadow-sm space-y-2">
@@ -161,9 +151,7 @@ function Card({ titulo, children }) {
   );
 }
 
-/* =========================
-   STATUS
-========================= */
+//STATUS
 function StatusCard({ finalizado }) {
   return (
     <div
@@ -176,9 +164,7 @@ function StatusCard({ finalizado }) {
   );
 }
 
-/* =========================
-   IMAGENS
-========================= */
+//IMAGENS
 function ImageSection({ imagens, mensagemVazia }) {
   const [imagemSelecionada, setImagemSelecionada] = useState(null);
 
@@ -220,9 +206,7 @@ function ImageSection({ imagens, mensagemVazia }) {
   );
 }
 
-/* =========================
-   RELATÓRIO
-========================= */
+//RELATÓRIO
 function RelatorioSection({ relatorio }) {
   if (!relatorio) {
     return (
